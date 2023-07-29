@@ -1,0 +1,199 @@
+//Done By- 
+//		POTNURI SRI ANJALI PRAVALLIKA, 21ECB0A45, ECE, 2ND YEAR(2022-2023), MEMBER OF ROBOTICS CLUB, NITW
+
+#include <SoftwareSerial.h>
+SoftwareSerial BT_Serial(2, 3); // RX, TX
+
+#define ena 10//Enable1 L298 Pin enA 
+#define motin1 9 //Motor1  L298 Pin in1 
+#define motin2 8 //Motor1  L298 Pin in1 
+#define motin3 7 //Motor2  L298 Pin in1 
+#define motin4 6 //Motor2  L298 Pin in1 
+#define enb 5 //Enable2 L298 Pin enB 
+
+#define IrR A0 //ir sensor Right
+#define IrL A1 //ir sensor Left
+
+#define ledsGre 12//front lights
+#define ledsBlu 13//back lights
+#define buzz 11//for horn
+
+int bt_data;
+//int bt_text;// variable to receive data from the serial port
+int Speed = 150;  
+
+int mode=0;
+
+void setup(){ // put your setup code here, to run once
+
+pinMode(IrR, INPUT); // declare if sensor as input  
+pinMode(IrL, INPUT); // declare ir sensor as input
+
+pinMode(ena, OUTPUT); // declare as output for L298 Pin enA 
+pinMode(motin1, OUTPUT); // declare as output for L298 Pin in1 
+pinMode(motin2, OUTPUT); // declare as output for L298 Pin in2 
+pinMode(motin3, OUTPUT); // declare as output for L298 Pin in3   
+pinMode(motin4, OUTPUT); // declare as output for L298 Pin in4 
+pinMode(enb, OUTPUT); // declare as output for L298 Pin enB 
+
+pinMode(ledsGre, OUTPUT);
+pinMode(ledsBlu, OUTPUT);
+pinMode(buzz, OUTPUT);
+
+Serial.begin(9600); // start serial communication at 9600bps
+BT_Serial.begin(9600); 
+delay(500);
+}
+
+
+void loop(){  
+  
+if(BT_Serial.available() > 0){  //if some date is sent, reads it and saves in state     
+bt_data = BT_Serial.read();      
+if(bt_data > 20){Speed = bt_data;}      
+}
+
+     if(bt_data == 8){mode=1; Speed=130;} //Auto Line Follower Command  
+else if(bt_data == 9){mode=0; Stop();}
+else if(bt_data == 10){mode=2; Speed=130;}//Manual Android Application Control Command
+else if(bt_data == 11){mode=3; Speed=130;}//
+else if(bt_data == 12){mode=4; Speed=130;}//
+else if(bt_data == 13){mode=5; Speed=130;}//for different bottons we put in app
+else if(bt_data == 14){mode=6; Speed=130;}//
+else if(bt_data == 15){mode=7; Speed=130;}//
+
+analogWrite(ena, Speed); // Write The Duty Cycle 0 to 255 Enable Pin A for Motor1 Speed 
+analogWrite(enb, Speed); // Write The Duty Cycle 0 to 255 Enable Pin B for Motor2 Speed 
+
+if(mode==0){     
+//===============================================================================
+//                          Key Control Command
+//=============================================================================== 
+     if(bt_data == 1){forward(); }  // if the bt_data is '1' the DC motor will go forward
+else if(bt_data == 2){backward();}  // if the bt_data is '2' the motor will Reverse
+else if(bt_data == 3){turnLeft();}  // if the bt_data is '3' the motor will turn left
+else if(bt_data == 4){turnRight();} // if the bt_data is '4' the motor will turn right
+else if(bt_data == 5){Stop(); }     // if the bt_data '5' the motor will Stop
+
+//===============================================================================
+//                          Voice Control Command
+//===============================================================================    
+else if(bt_data == 6){turnLeft();  delay(400);  bt_data = 5;}
+else if(bt_data == 7){turnRight(); delay(400);  bt_data = 5;}
+}
+else if(mode==1){
+     
+//===============================================================================
+//                          Line Follower Control
+//===============================================================================     
+if((digitalRead(IrR) == 0)&&(digitalRead(IrL) == 0)){forward();}  //if Right Sensor and Left Sensor are at White color then it will call forward function
+if((digitalRead(IrR) == 1)&&(digitalRead(IrL) == 0)){turnRight();}//if Right Sensor is Black and Left Sensor is White then it will call turn Right function  
+if((digitalRead(IrR) == 0)&&(digitalRead(IrL) == 1)){turnLeft();} //if Right Sensor is White and Left Sensor is Black then it will call turn Left function
+if((digitalRead(IrR) == 1)&&(digitalRead(IrL) == 1)){Stop();}     //if Right Sensor and Left Sensor are at Black color then it will call Stop function
+}
+
+else if(mode==2){
+  //digitalWrite(buzz, HIGH);
+ buzzeron();
+ delay(400);
+ bt_data = 5;
+}
+
+else if(mode==3){
+  //digitalWrite(buzz, LOW);
+  buzzeroff();
+  delay(400);
+ bt_data = 5;
+}
+
+else if(mode==4){
+  buzzeron();
+  forward();
+  delay(400);
+  bt_data = 5;
+}
+
+else if(mode==5){
+  buzzeron();
+  backward();
+  delay(400);
+  bt_data = 5;
+}
+
+else if(mode==6){
+  turnRight();
+  delay(400);
+  bt_data=5;
+}
+
+else{
+  turnLeft();
+  delay(400);
+  bt_data=5;
+}
+
+
+ 
+
+
+delay(10);
+}
+
+void forward(){  //forward
+digitalWrite(motin1, HIGH); //Right Motor forward Pin 
+digitalWrite(motin2, LOW);  //Right Motor backward Pin 
+digitalWrite(motin3, LOW);  //Left Motor backward Pin 
+digitalWrite(motin4, HIGH); //Left Motor forward Pin 
+digitalWrite(ledsGre, HIGH);
+digitalWrite(ledsBlu, LOW);
+//digitalWrite(buzz, HIGH);
+}
+
+void backward(){ //backward
+digitalWrite(motin1, LOW);  //Right Motor forward Pin 
+digitalWrite(motin2, HIGH); //Right Motor backward Pin 
+digitalWrite(motin3, HIGH); //Left Motor backward Pin 
+digitalWrite(motin4, LOW);  //Left Motor forward Pin 
+digitalWrite(ledsBlu, HIGH);
+digitalWrite(ledsGre, LOW);
+//digitalWrite(buzz, HIGH);
+}
+
+void turnRight(){ //turnRight
+digitalWrite(motin1, LOW);  //Right Motor forward Pin 
+digitalWrite(motin2, HIGH); //Right Motor backward Pin  
+digitalWrite(motin3, LOW);  //Left Motor backward Pin 
+digitalWrite(motin4, HIGH); //Left Motor forward Pin 
+digitalWrite(ledsBlu, LOW);
+digitalWrite(ledsGre, LOW);
+//digitalWrite(buzz, LOW);
+}
+
+void turnLeft(){ //turnLeft
+digitalWrite(motin1, HIGH); //Right Motor forward Pin 
+digitalWrite(motin2, LOW);  //Right Motor backward Pin 
+digitalWrite(motin3, HIGH); //Left Motor backward Pin 
+digitalWrite(motin4, LOW);  //Left Motor forward Pin 
+digitalWrite(ledsBlu, LOW);
+digitalWrite(ledsGre, LOW);
+//digitalWrite(buzz, LOW);
+}
+
+void Stop(){ //stop
+digitalWrite(motin1, LOW); //Right Motor forward Pin 
+digitalWrite(motin2, LOW); //Right Motor backward Pin 
+digitalWrite(motin3, LOW); //Left Motor backward Pin 
+digitalWrite(motin4, LOW); //Left Motor forward Pin 
+digitalWrite(ledsGre, LOW);
+digitalWrite(ledsBlu, LOW);
+//digitalWrite(buzz, LOW);
+}
+
+void buzzeron(){
+//digitalWrite(buzz, HIGH);
+tone(buzz,2000,500);
+}
+
+void buzzeroff(){
+  digitalWrite(buzz, LOW);
+  }
